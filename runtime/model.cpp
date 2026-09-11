@@ -106,6 +106,10 @@ Model Model::from_weights(const WeightFile& weights) {
 }
 
 Tensor Model::forward(const TokenIds& token_ids) const {
+  return forward_with_intermediates(token_ids).logits;
+}
+
+ModelForwardResult Model::forward_with_intermediates(const TokenIds& token_ids) const {
   if (token_ids.empty()) {
     throw std::invalid_argument("model forward requires at least one token ID");
   }
@@ -122,10 +126,17 @@ Tensor Model::forward(const TokenIds& token_ids) const {
       hidden.at({position, dimension}) = embeddings_.at({token, dimension});
     }
   }
+  Tensor embedded = hidden;
+  std::vector<Tensor> layer_outputs;
+  layer_outputs.reserve(layers_.size());
   for (const auto& layer : layers_) {
     hidden = decoder_block(hidden, layer, config_);
+    layer_outputs.push_back(hidden);
   }
-  return linear(rms_norm(hidden, final_norm_, config_.norm_epsilon), lm_head_);
+  Tensor final_hidden = rms_norm(hidden, final_norm_, config_.norm_epsilon);
+  Tensor logits = linear(final_hidden, lm_head_);
+  return ModelForwardResult{std::move(embedded), std::move(layer_outputs),
+                            std::move(final_hidden), std::move(logits)};
 }
 
 std::vector<float> Model::next_token_logits(const TokenIds& token_ids) const {

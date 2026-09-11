@@ -120,6 +120,26 @@ if(BUILD_TESTING)
             --converter ${CMAKE_CURRENT_SOURCE_DIR}/tools/convert_weights.py
             --work-dir ${CMAKE_CURRENT_BINARY_DIR}/converter-test
   )
+
+  set(TINYSERVE_SAVED_REFERENCE ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/fixture_reference.txt)
+  add_test(
+    NAME tinyserve.reference_dump
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_dump_reference.py
+            --dumper ${CMAKE_CURRENT_SOURCE_DIR}/tools/dump_reference.py
+            --checker ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_reference_outputs.py
+            --model ${TINYSERVE_DUMMY_FIXTURE}
+            --saved-reference ${TINYSERVE_SAVED_REFERENCE}
+            --work-dir ${CMAKE_CURRENT_BINARY_DIR}/reference-test
+  )
+
+  add_executable(tinyserve_reference_tests tests/test_reference.cpp)
+  target_link_libraries(tinyserve_reference_tests PRIVATE tinyserve_runtime)
+  tinyserve_enable_warnings(tinyserve_reference_tests)
+  add_dependencies(tinyserve_reference_tests tinyserve_dummy_fixture)
+  add_test(
+    NAME tinyserve.reference_compare
+    COMMAND tinyserve_reference_tests ${TINYSERVE_DUMMY_FIXTURE} ${TINYSERVE_SAVED_REFERENCE}
+  )
 endif()
 
 option(TINYSERVE_BUILD_BENCHMARKS "Build TinyServe benchmark placeholders" ON)

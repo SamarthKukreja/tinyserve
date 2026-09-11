@@ -11,6 +11,13 @@
 
 namespace tinyserve {
 
+struct ModelForwardResult {
+  Tensor embeddings;
+  std::vector<Tensor> layer_outputs;
+  Tensor final_hidden;
+  Tensor logits;
+};
+
 class Model {
  public:
   static Model load(const std::filesystem::path& path);
@@ -18,6 +25,7 @@ class Model {
 
   const ModelConfig& config() const noexcept { return config_; }
   Tensor forward(const TokenIds& token_ids) const;
+  ModelForwardResult forward_with_intermediates(const TokenIds& token_ids) const;
   std::vector<float> next_token_logits(const TokenIds& token_ids) const;
 
  private:
