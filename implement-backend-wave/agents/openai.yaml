@@ -1,0 +1,6 @@
+interface:
+  display_name: "Implement Backend Wave"
+  short_description: "Implement one backend wave cleanly"
+  default_prompt: "Use $implement-backend-wave to implement backend wave 0 from the current repo planning artifacts."
+policy:
+  allow_implicit_invocation: true

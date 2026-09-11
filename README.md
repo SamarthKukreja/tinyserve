@@ -1,0 +1,85 @@
+# TinyServe
+
+TinyServe is an educational C++/CUDA LLM inference runtime for studying transformer decoding, KV caching, quantization, and GPU bottlenecks. It prioritizes correctness, measurement, and reproducibility over production-level speed.
+
+Waves 0 through 3 provide the project foundation, a fixture-validated model boundary, scalar float32 transformer math, and an end-to-end synthetic CPU generation path. The executable can generate deterministic fixture token IDs, but those bytes have no language-quality meaning. Real-model reference validation, KV caching, and optional CUDA, INT8, and serving work are later milestones.
+
+## Build and test
+
+Requirements:
+
+- CMake 3.16 or newer
+- A C++17 compiler
+- Python 3 for fixture generation and converter tests (not required by the runtime when configured with `-DBUILD_TESTING=OFF`)
+
+From the repository root:
+
+```bash
+cmake -S . -B build
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Run the executable without arguments to print its fixture-validation status and usage. For a typical single-configuration generator:
+
+```bash
+./build/tinyserve
+```
+
+For Visual Studio generators on Windows, the default configuration is commonly under `build/Debug/`:
+
+```powershell
+.\build\Debug\tinyserve.exe
+```
+
+The optional placeholder benchmark target can be run in the same way as `tinyserve_bench`. It exits successfully while reporting that benchmarks are not implemented; it emits no performance numbers.
+
+To omit that placeholder:
+
+```bash
+cmake -S . -B build -DTINYSERVE_BUILD_BENCHMARKS=OFF
+```
+
+## Repository layout
+
+- `runtime/`: the C++ runtime and CLI
+- `tools/`: offline conversion and reference-generation tools
+- `tests/`: CTest-backed tests
+- `bench/`: reproducible benchmarks and generated results
+- `docs/`: scope, design notes, and measurement protocol
+- `examples/`: future small usage examples
+
+PyTorch and Hugging Face tooling may be used offline for weight conversion and reference generation, but not as TinyServe's inference backend. See [scope](docs/scope.md) and the [benchmark protocol](docs/benchmark_protocol.md) for the current contract and limitations.
+
+## Model boundary
+
+Wave 1 adds a strict line-based model configuration, a versioned binary tensor container, a standard-library-only deterministic fixture converter, a validating C++ loader, and a temporary byte tokenizer. The format and conversion command are documented in [weights](docs/weights.md); the deliberate tokenizer limitation is documented in [tokenizer](docs/tokenizer.md).
+
+These components are validated against a synthetic fixture only. No real model has been converted or loaded, and the temporary tokenizer is not compatible with Qwen or Llama vocabularies.
+
+## CPU math core
+
+Wave 2 adds contiguous float32 tensors, RMSNorm, RoPE, stable causal attention with grouped-query head mapping, SwiGLU, residuals, and reusable single-decoder-block composition. Shape and numerical conventions are documented in [CPU math](docs/cpu_math.md). These scalar implementations prioritize clarity and correctness; no speed claim is made.
+
+## Fixture generation CLI
+
+The test-enabled build creates `build/fixtures/dummy.tserve`. Run greedy fixture generation with:
+
+```bash
+./build/tinyserve generate \
+  --model build/fixtures/dummy.tserve \
+  --prompt "Hello" \
+  --max-tokens 4
+```
+
+On a Visual Studio multi-configuration build, use the executable under the selected configuration directory, such as `.\build\Release\tinyserve.exe`, while the generated fixture remains under `build\fixtures\`.
+
+The CLI also accepts `--tokens 65,66`, and positive-temperature sampling supports `--top-k` and `--seed`. Every run prints `validation_status=synthetic_fixture_unverified`. See [CPU generation](docs/cpu_generation.md) for semantics and limitations.
+
+## Status
+
+Wave 3 (fixture CPU forward pass and generation CLI) is complete. No real-model correctness, language quality, KV-cache acceleration, benchmark result, or production-serving capability is claimed yet. Detailed status is tracked in `tinyserve_implementation_progress.md`.
+
+## License
+
+MIT. See `LICENSE`.

@@ -1,0 +1,24 @@
+# CMake build trees
+/build/
+/build-*/
+/out/
+/cmake-build-*/
+CMakeUserPresets.json
+
+# Compiler and editor output
+*.o
+*.obj
+*.exe
+*.pdb
+.vs/
+.vscode/
+.idea/
+
+# Python tooling
+__pycache__/
+*.py[cod]
+.venv/
+
+# Local models and generated benchmark artifacts
+/models/
+/bench/generated/
