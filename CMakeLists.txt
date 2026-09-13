@@ -17,6 +17,7 @@ endfunction()
 add_library(tinyserve_runtime
   runtime/attention.cpp
   runtime/generator.cpp
+  runtime/kv_cache.cpp
   runtime/layers.cpp
   runtime/model.cpp
   runtime/model_config.cpp
@@ -103,11 +104,23 @@ if(BUILD_TESTING)
     COMMAND tinyserve_generation_tests ${TINYSERVE_DUMMY_FIXTURE}
   )
 
+  add_executable(tinyserve_kv_cache_tests tests/test_kv_cache.cpp)
+  target_link_libraries(tinyserve_kv_cache_tests PRIVATE tinyserve_runtime)
+  tinyserve_enable_warnings(tinyserve_kv_cache_tests)
+  add_test(NAME tinyserve.kv_cache COMMAND tinyserve_kv_cache_tests)
+
   add_test(
     NAME tinyserve.cli
     COMMAND tinyserve generate --model ${TINYSERVE_DUMMY_FIXTURE} --prompt A --max-tokens 2
   )
   set_tests_properties(tinyserve.cli PROPERTIES PASS_REGULAR_EXPRESSION "generated_token_ids=")
+  add_test(
+    NAME tinyserve.cli_kv_cache
+    COMMAND tinyserve generate --model ${TINYSERVE_DUMMY_FIXTURE} --prompt A --max-tokens 2
+            --decode-mode kv-cache
+  )
+  set_tests_properties(tinyserve.cli_kv_cache PROPERTIES
+                       PASS_REGULAR_EXPRESSION "decode_mode=kv-cache")
   add_test(
     NAME tinyserve.cli_invalid
     COMMAND tinyserve generate --model ${TINYSERVE_DUMMY_FIXTURE} --prompt A --tokens 65
@@ -140,10 +153,25 @@ if(BUILD_TESTING)
     NAME tinyserve.reference_compare
     COMMAND tinyserve_reference_tests ${TINYSERVE_DUMMY_FIXTURE} ${TINYSERVE_SAVED_REFERENCE}
   )
+
+  add_test(
+    NAME tinyserve.kv_results
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/render_kv_results.py
+            --results ${CMAKE_CURRENT_SOURCE_DIR}/bench/results.csv
+            --raw-results ${CMAKE_CURRENT_SOURCE_DIR}/bench/raw_results.csv
+            --kv-doc ${CMAKE_CURRENT_SOURCE_DIR}/docs/kv_cache_results.md
+            --report ${CMAKE_CURRENT_SOURCE_DIR}/docs/final_benchmark_report.md
+            --readme ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+            --check
+  )
 endif()
 
-option(TINYSERVE_BUILD_BENCHMARKS "Build TinyServe benchmark placeholders" ON)
+option(TINYSERVE_BUILD_BENCHMARKS "Build TinyServe fixture benchmarks" ON)
 if(TINYSERVE_BUILD_BENCHMARKS)
-  add_executable(tinyserve_bench bench/placeholder_bench.cpp)
+  add_executable(tinyserve_bench bench/kv_cache_bench.cpp)
+  target_link_libraries(tinyserve_bench PRIVATE tinyserve_runtime)
+  target_compile_definitions(tinyserve_bench PRIVATE
+    TINYSERVE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
+  )
   tinyserve_enable_warnings(tinyserve_bench)
 endif()

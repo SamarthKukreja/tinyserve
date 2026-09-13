@@ -1,6 +1,6 @@
 # Benchmark Protocol
 
-This document defines how TinyServe will collect performance results once executable inference exists. Wave 0 contains no performance results, and the placeholder benchmark deliberately records none.
+This document defines how TinyServe collects performance results. Wave 0's placeholder recorded no measurements; Wave 5 replaces it with the fixture-only no-cache/KV-cache benchmark whose generated summary and retained samples live in `bench/results.csv` and `bench/raw_results.csv`.
 
 ## Metrics
 
@@ -21,7 +21,7 @@ Every saved result must identify:
 - Model identifier and artifact checksum, precision, prompt/token lengths, batch size, seed, and sampling settings
 - Command used, warm-up policy, repeat count, and measurement method
 
-The current hardware and toolchain values are not yet recorded. Future benchmark scripts must capture them rather than filling them from memory.
+The Wave 5 fixture result records its local hardware, RAM, scalar thread setting, compiler, build type, model checksum, command, warmups, and repeats directly from the benchmark harness. Future benchmark paths must capture the same metadata rather than filling it from memory.
 
 ## Procedure
 

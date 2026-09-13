@@ -148,4 +148,37 @@ std::vector<float> Model::next_token_logits(const TokenIds& token_ids) const {
                                 static_cast<std::ptrdiff_t>(offset + vocab));
 }
 
+KvCache Model::create_kv_cache(std::size_t capacity) const {
+  if (capacity == 0 || capacity > config_.max_sequence_length) {
+    throw std::out_of_range("KV cache capacity must be within max_sequence_length");
+  }
+  return KvCache(config_.num_layers, config_.num_kv_heads, capacity,
+                 config_.hidden_size / config_.num_heads);
+}
+
+std::vector<float> Model::next_token_logits_cached(TokenId token_id, KvCache& cache) const {
+  if (token_id >= config_.vocab_size) {
+    throw std::out_of_range("token ID " + std::to_string(token_id) +
+                            " exceeds vocabulary size");
+  }
+  if (cache.num_layers() != config_.num_layers ||
+      cache.num_kv_heads() != config_.num_kv_heads ||
+      cache.head_dimension() != config_.hidden_size / config_.num_heads) {
+    throw std::invalid_argument("KV cache geometry does not match model configuration");
+  }
+  const auto position = cache.synchronized_size();
+  if (position >= config_.max_sequence_length || position >= cache.capacity()) {
+    throw std::out_of_range("KV cache has no capacity for another token");
+  }
+  Tensor hidden({1, config_.hidden_size});
+  for (std::size_t dimension = 0; dimension < config_.hidden_size; ++dimension) {
+    hidden.at({0, dimension}) = embeddings_.at({token_id, dimension});
+  }
+  for (std::size_t layer = 0; layer < layers_.size(); ++layer) {
+    hidden = decoder_block_cached(hidden, layers_[layer], config_, cache, layer, position);
+  }
+  const auto logits = linear(rms_norm(hidden, final_norm_, config_.norm_epsilon), lm_head_);
+  return logits.values();
+}
+
 }  // namespace tinyserve

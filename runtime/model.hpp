@@ -27,6 +27,8 @@ class Model {
   Tensor forward(const TokenIds& token_ids) const;
   ModelForwardResult forward_with_intermediates(const TokenIds& token_ids) const;
   std::vector<float> next_token_logits(const TokenIds& token_ids) const;
+  KvCache create_kv_cache(std::size_t capacity) const;
+  std::vector<float> next_token_logits_cached(TokenId token_id, KvCache& cache) const;
 
  private:
   Model(ModelConfig config, Tensor embeddings, std::vector<DecoderBlockWeights> layers,

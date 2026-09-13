@@ -23,14 +23,38 @@ GenerationResult generate_tokens(const Model& model, const TokenIds& prompt_toke
   result.all_tokens = prompt_tokens;
   result.generated_tokens.reserve(options.max_new_tokens);
   Sampler sampler(options.sampling);
+  if (options.decode_mode == DecodeMode::no_cache) {
+    for (std::size_t step = 0; step < options.max_new_tokens; ++step) {
+      const auto next = sampler.select(model.next_token_logits(result.all_tokens));
+      result.generated_tokens.push_back(next);
+      result.all_tokens.push_back(next);
+      if (options.stop_token_id && next == *options.stop_token_id) {
+        break;
+      }
+    }
+    return result;
+  }
+
+  if (options.max_new_tokens == 0) {
+    return result;
+  }
+  auto cache = model.create_kv_cache(prompt_tokens.size() + options.max_new_tokens);
+  std::vector<float> logits;
+  for (const auto token : prompt_tokens) {
+    logits = model.next_token_logits_cached(token, cache);
+  }
   for (std::size_t step = 0; step < options.max_new_tokens; ++step) {
-    const auto next = sampler.select(model.next_token_logits(result.all_tokens));
+    const auto next = sampler.select(logits);
     result.generated_tokens.push_back(next);
     result.all_tokens.push_back(next);
     if (options.stop_token_id && next == *options.stop_token_id) {
       break;
     }
+    if (step + 1 < options.max_new_tokens) {
+      logits = model.next_token_logits_cached(next, cache);
+    }
   }
+  result.kv_cache_tokens = cache.synchronized_size();
   return result;
 }
 

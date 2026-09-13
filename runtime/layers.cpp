@@ -181,4 +181,46 @@ Tensor decoder_block(const Tensor& input, const DecoderBlockWeights& weights,
   return residual_add(after_attention, mlp_update);
 }
 
+Tensor decoder_block_cached(const Tensor& input, const DecoderBlockWeights& weights,
+                            const ModelConfig& config, KvCache& cache,
+                            std::size_t layer_index, std::size_t position) {
+  validate_model_config(config);
+  if (input.shape() != std::vector<std::size_t>({1, config.hidden_size})) {
+    throw std::invalid_argument("cached decoder block input must have shape [1, hidden_size]");
+  }
+  if (position >= config.max_sequence_length || position >= cache.capacity()) {
+    throw std::out_of_range("cached decoder position exceeds configured capacity");
+  }
+  if (cache.layer_size(layer_index) != position) {
+    throw std::logic_error("cached decoder layer position does not match cache size");
+  }
+  const auto head_dimension = config.hidden_size / config.num_heads;
+  const auto normalized = rms_norm(input, weights.attention_norm, config.norm_epsilon);
+  const auto projected_queries =
+      linear(normalized, weights.query_projection,
+             weights.query_bias ? &weights.query_bias.value() : nullptr);
+  const auto projected_keys =
+      linear(normalized, weights.key_projection,
+             weights.key_bias ? &weights.key_bias.value() : nullptr);
+  const auto projected_values =
+      linear(normalized, weights.value_projection,
+             weights.value_bias ? &weights.value_bias.value() : nullptr);
+
+  Tensor queries({1, config.num_heads, head_dimension}, projected_queries.values());
+  Tensor keys({1, config.num_kv_heads, head_dimension}, projected_keys.values());
+  Tensor values({1, config.num_kv_heads, head_dimension}, projected_values.values());
+  apply_rope(queries, keys, position, config.rope_theta);
+  cache.append(layer_index, keys, values);
+  const auto attended = scaled_dot_product_attention_cached(
+      queries, cache.keys(layer_index), cache.values(layer_index), position);
+  const Tensor attended_flat({1, config.hidden_size}, attended.values());
+  const auto after_attention =
+      residual_add(input, linear(attended_flat, weights.output_projection));
+  const auto post_attention =
+      rms_norm(after_attention, weights.post_attention_norm, config.norm_epsilon);
+  const auto mlp_update = feed_forward(post_attention, weights.gate_projection,
+                                       weights.up_projection, weights.down_projection);
+  return residual_add(after_attention, mlp_update);
+}
+
 }  // namespace tinyserve

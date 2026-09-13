@@ -102,4 +102,56 @@ Tensor scaled_dot_product_attention(const Tensor& queries, const Tensor& keys,
   return output;
 }
 
+Tensor scaled_dot_product_attention_cached(const Tensor& queries, const Tensor& keys,
+                                           const Tensor& values,
+                                           std::size_t query_start_position) {
+  if (queries.rank() != 3 || keys.rank() != 3 || values.rank() != 3) {
+    throw std::invalid_argument("cached attention expects rank-3 query, key, and value tensors");
+  }
+  const auto query_sequence = queries.dimension(0);
+  const auto key_sequence = keys.dimension(0);
+  const auto query_heads = queries.dimension(1);
+  const auto head_dimension = queries.dimension(2);
+  const auto kv_heads = keys.dimension(1);
+  if (values.shape() != keys.shape() || keys.dimension(2) != head_dimension) {
+    throw std::invalid_argument("cached attention key/value shapes are incompatible with queries");
+  }
+  if (query_heads % kv_heads != 0) {
+    throw std::invalid_argument("cached attention query heads must be divisible by KV heads");
+  }
+  if (query_start_position > std::numeric_limits<std::size_t>::max() - query_sequence ||
+      query_start_position + query_sequence != key_sequence) {
+    throw std::invalid_argument(
+        "cached attention keys must contain the complete prefix through all queries");
+  }
+
+  Tensor output({query_sequence, query_heads, head_dimension});
+  const auto query_heads_per_kv_head = query_heads / kv_heads;
+  const float scale = 1.0F / std::sqrt(static_cast<float>(head_dimension));
+  for (std::size_t local_query = 0; local_query < query_sequence; ++local_query) {
+    const auto absolute_query = query_start_position + local_query;
+    for (std::size_t query_head = 0; query_head < query_heads; ++query_head) {
+      const auto kv_head = query_head / query_heads_per_kv_head;
+      std::vector<float> scores(absolute_query + 1, 0.0F);
+      for (std::size_t key_position = 0; key_position <= absolute_query; ++key_position) {
+        for (std::size_t dimension = 0; dimension < head_dimension; ++dimension) {
+          scores[key_position] += queries.at({local_query, query_head, dimension}) *
+                                  keys.at({key_position, kv_head, dimension});
+        }
+        scores[key_position] *= scale;
+      }
+      const auto probabilities = stable_softmax(scores);
+      for (std::size_t dimension = 0; dimension < head_dimension; ++dimension) {
+        float weighted_value = 0.0F;
+        for (std::size_t key_position = 0; key_position <= absolute_query; ++key_position) {
+          weighted_value += probabilities[key_position] *
+                            values.at({key_position, kv_head, dimension});
+        }
+        output.at({local_query, query_head, dimension}) = weighted_value;
+      }
+    }
+  }
+  return output;
+}
+
 }  // namespace tinyserve

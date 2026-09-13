@@ -2,7 +2,7 @@
 
 TinyServe is an educational C++/CUDA LLM inference runtime for studying transformer decoding, KV caching, quantization, and GPU bottlenecks. It prioritizes correctness, measurement, and reproducibility over production-level speed.
 
-Waves 0 through 4 provide the project foundation, a fixture-validated model boundary, scalar float32 transformer math, an end-to-end synthetic CPU generation path, and a reproducible offline correctness harness. The executable can generate deterministic fixture token IDs, but those bytes have no language-quality meaning. Real-model validation, KV caching, and optional CUDA, INT8, and serving work are later milestones.
+Waves 0 through 5 provide the project foundation, a fixture-validated model boundary, scalar float32 transformer math, an end-to-end synthetic CPU generation path, a reproducible offline correctness harness, and contiguous KV-cache decoding with saved benchmarks. The executable can generate deterministic fixture token IDs, but those bytes have no language-quality meaning. Real-model validation and optional CUDA, INT8, and serving work are later milestones.
 
 ## Build and test
 
@@ -32,9 +32,9 @@ For Visual Studio generators on Windows, the default configuration is commonly u
 .\build\Debug\tinyserve.exe
 ```
 
-The optional placeholder benchmark target can be run in the same way as `tinyserve_bench`. It exits successfully while reporting that benchmarks are not implemented; it emits no performance numbers.
+The optional `tinyserve_bench` target measures fixture no-cache and KV-cache decoding. Reproduce the checked-in Wave 5 result with the exact command recorded in [KV cache results](docs/kv_cache_results.md), then run `tools/render_kv_results.py` to synchronize the README and reports from the generated CSV files.
 
-To omit that placeholder:
+To omit benchmarks from a runtime-only build:
 
 ```bash
 cmake -S . -B build -DTINYSERVE_BUILD_BENCHMARKS=OFF
@@ -86,9 +86,24 @@ ctest --test-dir build --output-on-failure -R reference
 
 The fixture process, fixed numerical tolerances, divergence workflow, optional local Hugging Face dump command, and mandatory approval gate before model downloads are documented in [correctness](docs/correctness.md). The offline fixture checks pass without PyTorch, Transformers, network access, or model downloads. The real-model path has not been run and no real-model correctness is claimed.
 
+## KV cache and minimum strong version
+
+Use `--decode-mode no-cache` (the default) or `--decode-mode kv-cache` with the generation CLI. The cache is a contiguous single-sequence float32 allocation, and cached greedy generation is tested against the preserved no-cache path.
+
+<!-- KV_BENCHMARK_START -->
+### Measured fixture result
+
+| Mode | Median TTFT (ms) | Median decode (ms) | Decode tok/s | Persistent KV bytes |
+| --- | ---: | ---: | ---: | ---: |
+| no-cache | 0.180137 | 2.548351 | 2746.874351 | 0 |
+| kv-cache | 0.186669 | 0.360349 | 19425.612392 | 192 |
+
+For this run, cached decode throughput was 7.072x the no-cache fixture throughput. This is a tiny synthetic fixture result, not real-model performance. Full metadata and raw samples are in [KV cache results](docs/kv_cache_results.md).
+<!-- KV_BENCHMARK_END -->
+
 ## Status
 
-Wave 4 (offline fixture correctness harness) is complete. No real-model correctness, language quality, KV-cache acceleration, benchmark result, or production-serving capability is claimed yet. Detailed status is tracked in `tinyserve_implementation_progress.md`.
+Wave 5 (fixture CPU runtime, correctness harness, contiguous KV cache, and reproducible fixture benchmark) is complete as the minimum strong version. No real-model correctness, language quality, CUDA/INT8 result, external-engine comparison, or production-serving capability is claimed. Detailed status is tracked in `tinyserve_implementation_progress.md`.
 
 ## License
 

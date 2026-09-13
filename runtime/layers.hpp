@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/model_config.hpp"
+#include "runtime/kv_cache.hpp"
 #include "runtime/tensor.hpp"
 
 #include <cstddef>
@@ -39,5 +40,10 @@ struct DecoderBlockWeights {
 // Runs one pre-norm decoder block. It intentionally has no KV cache or full-model loop.
 Tensor decoder_block(const Tensor& input, const DecoderBlockWeights& weights,
                      const ModelConfig& config, std::size_t start_position = 0);
+
+// Runs an incremental single-token block and appends this layer's rotated K/V.
+Tensor decoder_block_cached(const Tensor& input, const DecoderBlockWeights& weights,
+                            const ModelConfig& config, KvCache& cache,
+                            std::size_t layer_index, std::size_t position);
 
 }  // namespace tinyserve

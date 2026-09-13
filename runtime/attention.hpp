@@ -14,4 +14,10 @@ void apply_causal_mask(Tensor& scores);
 Tensor scaled_dot_product_attention(const Tensor& queries, const Tensor& keys,
                                     const Tensor& values);
 
+// Incremental attention where queries start at an absolute cached position and
+// keys/values contain the complete prefix through the final query token.
+Tensor scaled_dot_product_attention_cached(const Tensor& queries, const Tensor& keys,
+                                           const Tensor& values,
+                                           std::size_t query_start_position);
+
 }  // namespace tinyserve

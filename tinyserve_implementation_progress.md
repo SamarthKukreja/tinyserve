@@ -3,12 +3,12 @@
 ## Overall Progress
 
 - Total prompts: 40 (Prompt 000 through Prompt 039)
-- Completed prompts: 18
-- Remaining prompts: 22
-- Percentage complete: 45%
-- Current phase: Phase 3 — KV Cache And Minimum Strong Version
-- Current milestone: Baseline no-cache decode benchmark
-- Current prompt: Prompt 018 — Baseline No-Cache Decode Benchmark
+- Completed prompts: 23
+- Remaining prompts: 17
+- Percentage complete: 57.5%
+- Current phase: Phase 4 — CUDA Microkernels
+- Current milestone: Optional CUDA build gate and hardware detection
+- Current prompt: Prompt 023 — CUDA Build Gate And Hardware Detection
 
 ## Phase Progress
 
@@ -17,7 +17,7 @@
 | 0 — Repository Skeleton And Scope | Complete | 4 | 0 | 1-2 sessions | Foundation, docs, CMake targets, and smoke test validated on Windows/MSVC. |
 | 1 — Correct CPU Inference Baseline | Complete | 11 | 0 | 4-6 sessions | Synthetic fixture forward pass, deterministic decoding, and CLI complete; named-model correctness remains gated on Phase 2. |
 | 2 — Reference Correctness Harness | Complete | 3 | 0 | 2-3 sessions | Offline fixture oracle and comparisons complete; real-model validation remains explicitly gated and unrun. |
-| 3 — KV Cache And Minimum Strong Version | Not Started | 0 | 5 | 3-4 sessions | Requires correctness baseline. |
+| 3 — KV Cache And Minimum Strong Version | Complete | 5 | 0 | 3-4 sessions | Contiguous cache, exact greedy equivalence, retained fixture benchmark samples, and minimum-version report complete. |
 | 4 — CUDA Microkernels | Not Started | 0 | 5 | 4-6 sessions | Optional; requires user/toolchain gate. |
 | 5 — INT8 Quantization | Not Started | 0 | 3 | 2-4 sessions | Starts only after the minimum strong version. |
 | 6 — Minimal Serving Layer | Not Started | 0 | 2 | 2-3 sessions | API is intentionally absent before this phase. |
@@ -33,8 +33,8 @@
 | CPU tensor and runtime | Complete | 005, 009-012 | Shape-checked primitives and full forward pass | Complete for the synthetic float32 fixture; real-model activation checks remain pending. |
 | Tokenization and CLI | Complete | 008, 013-014 | Explicit tokenizer boundary and deterministic CPU generation | Byte-tokenizer fixture CLI complete; named-model tokenizer compatibility remains unsupported. |
 | Correctness harness | Complete | 015-017 | Reproducible references and documented tolerances | Complete for the synthetic fixture; no real-model correctness claim. |
-| KV cache | Not Started | 018-020 | Cached and no-cache greedy outputs match | — |
-| KV benchmark and minimum version | Not Started | 021-022 | Repeatable latency/memory comparison and honest report | — |
+| KV cache | Complete | 018-020 | Cached and no-cache greedy outputs match | Contiguous single-sequence float32 cache; no paged cache or batching. |
+| KV benchmark and minimum version | Complete | 021-022 | Repeatable latency/memory comparison and honest report | Synthetic fixture only; raw samples and generated reports checked in. |
 | CUDA kernels and benchmarks | Not Started | 023-027 | Optional gated kernels, checks, and profiling notes | Requires hardware/toolchain review. |
 | INT8 quantization and benchmark | Not Started | 028-030 | Measured memory/latency/drift tradeoff | — |
 | Minimal server and load test | Not Started | 031-032 | Canonical API behavior and measured local load test | — |
@@ -61,11 +61,11 @@
 - [x] Prompt 015 — Offline Reference Dump Tool
 - [x] Prompt 016 — Layer-Level Correctness Tests Against References
 - [x] Prompt 017 — Correctness Documentation And Real-Model Gate
-- [ ] Prompt 018 — Baseline No-Cache Decode Benchmark
-- [ ] Prompt 019 — Contiguous KV Cache Data Structure
-- [ ] Prompt 020 — Integrate KV Cache Into Decode Loop
-- [ ] Prompt 021 — KV Cache Benchmark And Results Documentation
-- [ ] Prompt 022 — Minimum Strong Version Report And README Pass
+- [x] Prompt 018 — Baseline No-Cache Decode Benchmark
+- [x] Prompt 019 — Contiguous KV Cache Data Structure
+- [x] Prompt 020 — Integrate KV Cache Into Decode Loop
+- [x] Prompt 021 — KV Cache Benchmark And Results Documentation
+- [x] Prompt 022 — Minimum Strong Version Report And README Pass
 - [ ] Prompt 023 — CUDA Build Gate And Hardware Detection
 - [ ] Prompt 024 — CUDA RMSNorm Kernel And Tests
 - [ ] Prompt 025 — CUDA RoPE Kernel And Tests
@@ -94,8 +94,8 @@
 | CPU tensor operations and transformer layers | 005, 009-012 | Complete for deterministic synthetic fixture; reference validation pending |
 | Greedy decoding, sampling, and generation CLI | 013-014 | Complete for deterministic synthetic fixture |
 | Offline references, numerical checks, and correctness report | 015-017 | Complete for the deterministic fixture; real-model validation gated and unrun |
-| No-cache baseline, contiguous KV cache, and comparison | 018-021 | Pending |
-| Minimum strong version packaging | 022 | Pending |
+| No-cache baseline, contiguous KV cache, and comparison | 018-021 | Complete for the deterministic fixture with generated CSV/docs |
+| Minimum strong version packaging | 022 | Complete; suggested `v0.3-kv-cache` tag documented but not created |
 | Optional CUDA gate, kernels, microbenchmarks, and notes | 023-027 | Pending |
 | Weight-only INT8 path and measured tradeoffs | 028-030 | Pending |
 | Canonical minimal HTTP API and load testing | 031-032 | Pending |
@@ -105,18 +105,18 @@
 
 ## Timeline Progress
 
-- Current phase: Phase 3 — KV Cache And Minimum Strong Version
-- Planned milestone: Establish the measured no-cache decode baseline before cache work
-- Completed milestone: Wave 4 reproducible offline fixture references and primitive/layer/logit comparisons
-- Next milestone: Prompt 018 — Baseline No-Cache Decode Benchmark
-- Schedule status: Phase 2 fixture correctness complete; named-model validation remains gated and no calendar completion claim is made
+- Current phase: Phase 4 — CUDA Microkernels
+- Planned milestone: Evaluate the optional CUDA build/toolchain gate before adding any GPU code
+- Completed milestone: Wave 5 contiguous KV-cache decode, fixture benchmark, and minimum strong version report
+- Next milestone: Prompt 023 — CUDA Build Gate And Hardware Detection
+- Schedule status: Minimum strong CPU version complete; named-model validation remains gated and optional CUDA has not started
 
 ## Current Task
 
-- Current Prompt: Prompt 018
-- Current Phase: Phase 3 — KV Cache And Minimum Strong Version
-- Current Milestone: Baseline no-cache decode benchmark
-- Current Objective: Measure the existing no-cache decode path reproducibly before implementing KV caching
+- Current Prompt: Prompt 023
+- Current Phase: Phase 4 — CUDA Microkernels
+- Current Milestone: Optional CUDA build gate and hardware detection
+- Current Objective: Determine CUDA toolkit/GPU availability while preserving CPU-only builds
 
 ## Change Log
 
@@ -140,3 +140,8 @@
 | 2026-08-17 | 015 | 2 | Added a deterministic standard-library Python fixture oracle plus an optional local-only Hugging Face reference dump mode | `tools/dump_reference.py`, `tools/check_reference_outputs.py`, `tests/fixtures/fixture_reference.txt` | `tinyserve.reference_dump` | CI fixture mode has no external dependency or download; HF mode is lazy, local-only by default, and was not run. |
 | 2026-08-17 | 016 | 2 | Added diagnostic model intermediates and C++ comparisons for RMSNorm, RoPE, causal mask, attention, embeddings, decoder output, final hidden state, and full last-token logits | `runtime/model.hpp`, `runtime/model.cpp`, `tests/test_reference.cpp`, `tests/test_dump_reference.py`, `CMakeLists.txt` | `tinyserve.reference_compare`, `tinyserve.reference_dump` | Independent Python double-precision references compare against scalar C++ float32 within fixed tolerances. |
 | 2026-08-17 | 017 | 2 | Documented offline and gated real-model workflows, exact commands, artifacts, tolerance policy, and divergence diagnosis | `docs/correctness.md`, `README.md`, trackers | Existing Wave 4 tests rerun | Fixture harness complete; real-model validation is unrun pending an approved local model/tokenizer and operator authorization. |
+| 2026-08-17 | 018 | 3 | Added a Release benchmark harness that measures fixture TTFT and no-cache decode throughput with warmups, repeated samples, checksums, and environment metadata | `bench/kv_cache_bench.cpp`, `CMakeLists.txt` | Benchmark correctness refusal if compared token sequences diverge | Baseline is a synthetic fixture measurement, not real-model performance. |
+| 2026-08-17 | 019 | 3 | Added separate contiguous float32 key/value buffers with per-layer logical lengths, append/retrieve, bounds, reset, and exact byte accounting | `runtime/kv_cache.hpp`, `runtime/kv_cache.cpp`, `tests/test_kv_cache.cpp`, `CMakeLists.txt`, `docs/kv_cache_notes.md` | `tinyserve.kv_cache` | Layout is `[layer][position][kv_head][head_dimension]`; paged allocation and batching are out of scope. |
+| 2026-08-17 | 020 | 3 | Added incremental cached attention/model decoding, generation/CLI mode selection, cache growth/reset checks, and cached/no-cache equivalence | `runtime/attention.hpp`, `runtime/attention.cpp`, `runtime/layers.hpp`, `runtime/layers.cpp`, `runtime/model.hpp`, `runtime/model.cpp`, `runtime/generator.hpp`, `runtime/generator.cpp`, `runtime/generate.cpp`, `tests/test_generation.cpp`, `CMakeLists.txt` | Updated `tinyserve.generation`; `tinyserve.cli_kv_cache` | Preserved no-cache as the default and reference path. |
+| 2026-08-17 | 021 | 3 | Measured both modes under identical 4-prompt/8-generated-token settings, retained 18 raw samples, and generated synchronized result documentation | `bench/results.csv`, `bench/raw_results.csv`, `tools/render_kv_results.py`, `docs/kv_cache_results.md`, `README.md`, `CMakeLists.txt` | `tinyserve.kv_results` | Release/MSVC fixture run measured 2,746.874351 no-cache vs 19,425.612392 cached decode tok/s and 192 persistent cache bytes; process peak memory was not measured. |
+| 2026-08-17 | 022 | 3 | Packaged architecture, commands, correctness evidence, benchmark table, limitations, and next steps as the minimum strong version | `README.md`, `docs/final_benchmark_report.md`, `docs/cpu_generation.md`, trackers and timeline | Full CTest suite | Suggested `v0.3-kv-cache` tag documented; no tag created because the user did not request it and the workspace is not a Git repository. |

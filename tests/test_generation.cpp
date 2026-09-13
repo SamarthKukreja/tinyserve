@@ -47,6 +47,38 @@ int main(int argc, char** argv) {
     require(first.generated_tokens == second.generated_tokens, "greedy generation is not stable");
     require(first.all_tokens.size() == 4, "generated sequence length is wrong");
 
+    tinyserve::GenerationOptions cached_options = greedy_options;
+    cached_options.decode_mode = tinyserve::DecodeMode::kv_cache;
+    const auto cached = tinyserve::generate_tokens(model, {65}, cached_options);
+    require(cached.generated_tokens == first.generated_tokens,
+            "cached greedy output differs from no-cache output");
+    require(cached.kv_cache_tokens == cached.prompt_tokens.size() +
+                                          cached.generated_tokens.size() - 1,
+            "cached generation did not grow once per processed decode token");
+    require(tinyserve::generate_tokens(model, {65}, cached_options).generated_tokens ==
+                cached.generated_tokens,
+            "repeated cached generation did not reset state");
+
+    const tinyserve::TokenIds prefix = {65, 66, 67};
+    auto cache = model.create_kv_cache(prefix.size());
+    std::vector<float> cached_logits;
+    for (std::size_t position = 0; position < prefix.size(); ++position) {
+      cached_logits = model.next_token_logits_cached(prefix[position], cache);
+      require(cache.synchronized_size() == position + 1,
+              "model cache did not grow by one token");
+    }
+    const auto no_cache_logits = model.next_token_logits(prefix);
+    require(cached_logits.size() == no_cache_logits.size(), "cached logit shape is wrong");
+    for (std::size_t index = 0; index < cached_logits.size(); ++index) {
+      require(std::fabs(cached_logits[index] - no_cache_logits[index]) <= 2.0e-5F,
+              "cached logits differ from no-cache logits");
+    }
+    cache.reset();
+    for (const auto token : prefix) {
+      cached_logits = model.next_token_logits_cached(token, cache);
+    }
+    require(cache.synchronized_size() == prefix.size(), "reset cache did not refill correctly");
+
     tinyserve::GenerationOptions sampled_options;
     sampled_options.max_new_tokens = 3;
     sampled_options.sampling = {0.9F, 5, 1234};

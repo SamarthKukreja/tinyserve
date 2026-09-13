@@ -244,6 +244,8 @@ git commit -m "Add reference harness for transformer correctness checks"
 
 Estimated time: 3-4 Codex sessions.
 
+Status: Complete on 2026-08-17 for the deterministic fixture. Cached/no-cache equivalence, retained benchmark samples, and generated result documentation passed; real-model performance remains unvalidated.
+
 Codex tasks:
 
 1. Implement contiguous KV cache:
@@ -526,6 +528,8 @@ v0.5-int8
 v1.0-benchmark-report
 ```
 
+`v0.3-kv-cache` is the suggested current milestone tag. It has not been created because tagging requires an explicit user request and this workspace is not a Git repository.
+
 ## Final Resume Bullets
 
 Minimum strong version:
@@ -568,4 +572,3 @@ Deepfake study -> robustness and generalization
 Perfecter.ai -> applied multimodal AI systems
 TinyServe -> low-level ML systems and inference engineering
 ```
-

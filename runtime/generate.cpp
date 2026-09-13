@@ -28,7 +28,8 @@ struct CliOptions {
 void print_usage(std::ostream& output) {
   output << "Usage:\n"
          << "  tinyserve generate --model FILE (--prompt TEXT | --tokens IDS) "
-            "[--max-tokens N] [--temperature T] [--top-k K] [--seed N]\n"
+            "[--max-tokens N] [--temperature T] [--top-k K] [--seed N] "
+            "[--decode-mode no-cache|kv-cache]\n"
          << "\nIDS is a comma-separated list such as 1,2,3. Temperature 0 selects greedy "
             "decoding.\n";
 }
@@ -121,6 +122,15 @@ CliOptions parse_options(int argc, char** argv) {
     } else if (argument == "--seed") {
       options.generation.sampling.seed =
           parse_u64(require_value(index, argc, argv, argument), argument);
+    } else if (argument == "--decode-mode") {
+      const auto value = require_value(index, argc, argv, argument);
+      if (value == "no-cache") {
+        options.generation.decode_mode = DecodeMode::no_cache;
+      } else if (value == "kv-cache") {
+        options.generation.decode_mode = DecodeMode::kv_cache;
+      } else {
+        throw std::invalid_argument("--decode-mode must be no-cache or kv-cache");
+      }
     } else if (argument == "--help" || argument == "-h") {
       print_usage(std::cout);
       throw std::runtime_error("help requested");
@@ -194,6 +204,9 @@ int run_cli(int argc, char** argv) {
     const auto prompt_tokens = options.prompt ? tokenizer.encode(*options.prompt) : *options.token_ids;
     const auto result = generate_tokens(model, prompt_tokens, options.generation);
     std::cout << "validation_status=synthetic_fixture_unverified\n"
+              << "decode_mode="
+              << (options.generation.decode_mode == DecodeMode::kv_cache ? "kv-cache" : "no-cache")
+              << '\n'
               << "prompt_token_ids=" << token_list(result.prompt_tokens) << '\n'
               << "generated_token_ids=" << token_list(result.generated_tokens) << '\n'
               << "generated_text=" << escaped_bytes(result.generated_tokens) << '\n';
