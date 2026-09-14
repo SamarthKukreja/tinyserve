@@ -2,6 +2,49 @@ cmake_minimum_required(VERSION 3.16)
 
 project(TinyServe VERSION 0.1.0 LANGUAGES CXX)
 
+option(TINYSERVE_ENABLE_CUDA "Probe for optional TinyServe CUDA microkernels" OFF)
+set(TINYSERVE_CUDA_AVAILABLE OFF)
+set(TINYSERVE_CUDA_TOOLKIT_FOUND OFF)
+set(TINYSERVE_CUDA_COMPILER "not-probed")
+if(TINYSERVE_ENABLE_CUDA)
+  include(CheckLanguage)
+  check_language(CUDA)
+  if(CMAKE_CUDA_COMPILER)
+    set(TINYSERVE_CUDA_COMPILER "${CMAKE_CUDA_COMPILER}")
+    if(CMAKE_VERSION VERSION_LESS 3.17)
+      message(WARNING
+        "TinyServe found a CUDA compiler, but optional CUDA targets require CMake 3.17+; "
+        "continuing with the CPU-only build")
+    else()
+      enable_language(CUDA)
+      find_package(CUDAToolkit QUIET)
+      if(CUDAToolkit_FOUND)
+        set(TINYSERVE_CUDA_TOOLKIT_FOUND ON)
+        set(TINYSERVE_CUDA_AVAILABLE ON)
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18 AND NOT CMAKE_CUDA_ARCHITECTURES)
+          message(WARNING
+            "CUDA is available but CMAKE_CUDA_ARCHITECTURES is unset; set it explicitly "
+            "for reproducible GPU binaries (for example, -DCMAKE_CUDA_ARCHITECTURES=86)")
+        endif()
+      else()
+        message(WARNING
+          "TinyServe found a CUDA compiler but not CUDAToolkit; continuing CPU-only")
+      endif()
+    endif()
+  else()
+    set(TINYSERVE_CUDA_COMPILER "not-found")
+    message(WARNING
+      "TINYSERVE_ENABLE_CUDA=ON but no CUDA compiler was found; optional CUDA targets "
+      "will be skipped and the CPU runtime remains available")
+  endif()
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cuda_status.txt.in
+  ${CMAKE_CURRENT_BINARY_DIR}/tinyserve_cuda_status.txt
+  @ONLY
+)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -164,6 +207,26 @@ if(BUILD_TESTING)
             --readme ${CMAKE_CURRENT_SOURCE_DIR}/README.md
             --check
   )
+
+  add_test(
+    NAME tinyserve.cuda_gate_status
+    COMMAND ${CMAKE_COMMAND}
+            -DSTATUS_FILE=${CMAKE_CURRENT_BINARY_DIR}/tinyserve_cuda_status.txt
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_cuda_gate.cmake
+  )
+endif()
+
+if(TINYSERVE_CUDA_AVAILABLE)
+  add_executable(tinyserve_cuda_check cuda/cuda_check.cu)
+  target_link_libraries(tinyserve_cuda_check PRIVATE CUDA::cudart)
+  set_target_properties(tinyserve_cuda_check PROPERTIES
+    CUDA_STANDARD 17
+    CUDA_STANDARD_REQUIRED ON
+  )
+  if(BUILD_TESTING)
+    add_test(NAME tinyserve.cuda_availability COMMAND tinyserve_cuda_check)
+    set_tests_properties(tinyserve.cuda_availability PROPERTIES SKIP_RETURN_CODE 77)
+  endif()
 endif()
 
 option(TINYSERVE_BUILD_BENCHMARKS "Build TinyServe fixture benchmarks" ON)

@@ -3,12 +3,13 @@
 ## Overall Progress
 
 - Total prompts: 40 (Prompt 000 through Prompt 039)
-- Completed prompts: 23
-- Remaining prompts: 17
-- Percentage complete: 57.5%
-- Current phase: Phase 4 — CUDA Microkernels
-- Current milestone: Optional CUDA build gate and hardware detection
-- Current prompt: Prompt 023 — CUDA Build Gate And Hardware Detection
+- Completed prompts: 24
+- Deferred prompts: 4
+- Remaining prompts: 16 (including 4 hardware-gated deferrals)
+- Percentage complete: 60%
+- Current phase: Phase 5 — INT8 Quantization
+- Current milestone: Weight-only INT8 quantization format and tool
+- Current prompt: Prompt 028 — Weight-Only INT8 Quantization Format And Tool
 
 ## Phase Progress
 
@@ -18,7 +19,7 @@
 | 1 — Correct CPU Inference Baseline | Complete | 11 | 0 | 4-6 sessions | Synthetic fixture forward pass, deterministic decoding, and CLI complete; named-model correctness remains gated on Phase 2. |
 | 2 — Reference Correctness Harness | Complete | 3 | 0 | 2-3 sessions | Offline fixture oracle and comparisons complete; real-model validation remains explicitly gated and unrun. |
 | 3 — KV Cache And Minimum Strong Version | Complete | 5 | 0 | 3-4 sessions | Contiguous cache, exact greedy equivalence, retained fixture benchmark samples, and minimum-version report complete. |
-| 4 — CUDA Microkernels | Not Started | 0 | 5 | 4-6 sessions | Optional; requires user/toolchain gate. |
+| 4 — CUDA Microkernels | Deferred With Reason | 1 | 4 | 4-6 sessions | Build gate complete; kernels and benchmarks deferred because no CUDA compiler/toolkit/device could be validated. |
 | 5 — INT8 Quantization | Not Started | 0 | 3 | 2-4 sessions | Starts only after the minimum strong version. |
 | 6 — Minimal Serving Layer | Not Started | 0 | 2 | 2-3 sessions | API is intentionally absent before this phase. |
 | 7 — Final Benchmark And Report | Not Started | 0 | 3 | 2-3 sessions | Benchmark numbers must come from saved runs. |
@@ -35,7 +36,7 @@
 | Correctness harness | Complete | 015-017 | Reproducible references and documented tolerances | Complete for the synthetic fixture; no real-model correctness claim. |
 | KV cache | Complete | 018-020 | Cached and no-cache greedy outputs match | Contiguous single-sequence float32 cache; no paged cache or batching. |
 | KV benchmark and minimum version | Complete | 021-022 | Repeatable latency/memory comparison and honest report | Synthetic fixture only; raw samples and generated reports checked in. |
-| CUDA kernels and benchmarks | Not Started | 023-027 | Optional gated kernels, checks, and profiling notes | Requires hardware/toolchain review. |
+| CUDA kernels and benchmarks | Deferred With Reason | 023-027 | Optional gated kernels, checks, and profiling notes | Gate/availability target complete; RMSNorm, RoPE, GEMV/cuBLAS, and hooks deferred without a CUDA toolchain/device. |
 | INT8 quantization and benchmark | Not Started | 028-030 | Measured memory/latency/drift tradeoff | — |
 | Minimal server and load test | Not Started | 031-032 | Canonical API behavior and measured local load test | — |
 | Reproducible final benchmark | Not Started | 033-035 | Saved commands/results and synchronized report | — |
@@ -66,11 +67,11 @@
 - [x] Prompt 020 — Integrate KV Cache Into Decode Loop
 - [x] Prompt 021 — KV Cache Benchmark And Results Documentation
 - [x] Prompt 022 — Minimum Strong Version Report And README Pass
-- [ ] Prompt 023 — CUDA Build Gate And Hardware Detection
-- [ ] Prompt 024 — CUDA RMSNorm Kernel And Tests
-- [ ] Prompt 025 — CUDA RoPE Kernel And Tests
-- [ ] Prompt 026 — CUDA GEMV Microbenchmark And cuBLAS Baseline
-- [ ] Prompt 027 — CUDA Bottleneck Documentation And Optional Runtime Hooks
+- [x] Prompt 023 — CUDA Build Gate And Hardware Detection
+- [ ] Prompt 024 — CUDA RMSNorm Kernel And Tests — Deferred: no compiler/toolkit/device for correctness validation
+- [ ] Prompt 025 — CUDA RoPE Kernel And Tests — Deferred: no compiler/toolkit/device for correctness validation
+- [ ] Prompt 026 — CUDA GEMV Microbenchmark And cuBLAS Baseline — Deferred: no executable GPU path or approved existing cuBLAS toolchain
+- [ ] Prompt 027 — CUDA Bottleneck Documentation And Optional Runtime Hooks — Documentation complete; hooks deferred because no kernels were validated
 - [ ] Prompt 028 — Weight-Only INT8 Quantization Format And Tool
 - [ ] Prompt 029 — INT8 Runtime Path
 - [ ] Prompt 030 — INT8 Benchmark And Quality Drift Report
@@ -96,7 +97,7 @@
 | Offline references, numerical checks, and correctness report | 015-017 | Complete for the deterministic fixture; real-model validation gated and unrun |
 | No-cache baseline, contiguous KV cache, and comparison | 018-021 | Complete for the deterministic fixture with generated CSV/docs |
 | Minimum strong version packaging | 022 | Complete; suggested `v0.3-kv-cache` tag documented but not created |
-| Optional CUDA gate, kernels, microbenchmarks, and notes | 023-027 | Pending |
+| Optional CUDA gate, kernels, microbenchmarks, and notes | 023-027 | Gate and deferral notes complete; kernels/microbenchmarks deferred with reason |
 | Weight-only INT8 path and measured tradeoffs | 028-030 | Pending |
 | Canonical minimal HTTP API and load testing | 031-032 | Pending |
 | Reproducible benchmark harness and external comparison protocol | 033-035 | Pending |
@@ -105,18 +106,18 @@
 
 ## Timeline Progress
 
-- Current phase: Phase 4 — CUDA Microkernels
-- Planned milestone: Evaluate the optional CUDA build/toolchain gate before adding any GPU code
-- Completed milestone: Wave 5 contiguous KV-cache decode, fixture benchmark, and minimum strong version report
-- Next milestone: Prompt 023 — CUDA Build Gate And Hardware Detection
-- Schedule status: Minimum strong CPU version complete; named-model validation remains gated and optional CUDA has not started
+- Current phase: Phase 5 — INT8 Quantization
+- Planned milestone: Define the fixture-first weight-only INT8 format and offline quantization tool
+- Completed milestone: Wave 6 optional CUDA gate and honest hardware-gated deferral
+- Next milestone: Prompt 028 — Weight-Only INT8 Quantization Format And Tool
+- Schedule status: Minimum strong CPU version complete; CUDA kernels deferred without a local toolchain/device; named-model validation remains gated
 
 ## Current Task
 
-- Current Prompt: Prompt 023
-- Current Phase: Phase 4 — CUDA Microkernels
-- Current Milestone: Optional CUDA build gate and hardware detection
-- Current Objective: Determine CUDA toolkit/GPU availability while preserving CPU-only builds
+- Current Prompt: Prompt 028
+- Current Phase: Phase 5 — INT8 Quantization
+- Current Milestone: Weight-only INT8 quantization format and tool
+- Current Objective: Define reproducible fixture quantization without changing the validated float32 path
 
 ## Change Log
 
@@ -145,3 +146,5 @@
 | 2026-08-17 | 020 | 3 | Added incremental cached attention/model decoding, generation/CLI mode selection, cache growth/reset checks, and cached/no-cache equivalence | `runtime/attention.hpp`, `runtime/attention.cpp`, `runtime/layers.hpp`, `runtime/layers.cpp`, `runtime/model.hpp`, `runtime/model.cpp`, `runtime/generator.hpp`, `runtime/generator.cpp`, `runtime/generate.cpp`, `tests/test_generation.cpp`, `CMakeLists.txt` | Updated `tinyserve.generation`; `tinyserve.cli_kv_cache` | Preserved no-cache as the default and reference path. |
 | 2026-08-17 | 021 | 3 | Measured both modes under identical 4-prompt/8-generated-token settings, retained 18 raw samples, and generated synchronized result documentation | `bench/results.csv`, `bench/raw_results.csv`, `tools/render_kv_results.py`, `docs/kv_cache_results.md`, `README.md`, `CMakeLists.txt` | `tinyserve.kv_results` | Release/MSVC fixture run measured 2,746.874351 no-cache vs 19,425.612392 cached decode tok/s and 192 persistent cache bytes; process peak memory was not measured. |
 | 2026-08-17 | 022 | 3 | Packaged architecture, commands, correctness evidence, benchmark table, limitations, and next steps as the minimum strong version | `README.md`, `docs/final_benchmark_report.md`, `docs/cpu_generation.md`, trackers and timeline | Full CTest suite | Suggested `v0.3-kv-cache` tag documented; no tag created because the user did not request it and the workspace is not a Git repository. |
+| 2026-08-17 | 023 | 4 | Added an opt-in CUDA compiler/toolkit gate, generated status artifact, clean CPU fallback, conditional device probe target, architecture instructions, and gate validation | `CMakeLists.txt`, `cmake/cuda_status.txt.in`, `cuda/cuda_check.cu`, `tests/test_cuda_gate.cmake`, `docs/cuda_notes.md`, `README.md` | `tinyserve.cuda_gate_status`; conditional `tinyserve.cuda_availability` | CUDA-OFF and CUDA-ON/no-compiler builds pass; no installation was attempted. |
+| 2026-08-17 | 024-027 | 4 | Documented the exact CUDA detection failure, deferred kernel/benchmark/runtime-hook matrix, resume order, required metadata, and unmeasured bottleneck hypotheses | `docs/cuda_notes.md`, trackers and timeline | CPU suite and unavailable-gate build | Deferred with reason: nvcc, nvidia-smi, CUDA_PATH, toolkit, and a verifiable device were unavailable; no CUDA or cuBLAS results were invented. |

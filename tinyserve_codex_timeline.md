@@ -290,6 +290,8 @@ This is the most important milestone for MS applications. If later phases slip, 
 
 Estimated time: 4-6 Codex sessions.
 
+Status: Hardware-gated deferral on 2026-08-17. The optional CMake gate and conditional device probe are complete, but no CUDA compiler/toolkit/device was available to validate RMSNorm, RoPE, GEMV/cuBLAS, or runtime hooks. CPU-only builds remain green; resume from Prompt 024 on validated hardware.
+
 Codex tasks:
 
 1. Add CUDA build support.

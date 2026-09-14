@@ -11,6 +11,7 @@ Requirements:
 - CMake 3.16 or newer
 - A C++17 compiler
 - Python 3 for fixture generation and converter tests (not required by the runtime when configured with `-DBUILD_TESTING=OFF`)
+- Optional CUDA work requires an existing CUDA compiler/toolkit and a separately validated GPU; nothing is downloaded automatically
 
 From the repository root:
 
@@ -103,7 +104,11 @@ For this run, cached decode throughput was 7.072x the no-cache fixture throughpu
 
 ## Status
 
-Wave 5 (fixture CPU runtime, correctness harness, contiguous KV cache, and reproducible fixture benchmark) is complete as the minimum strong version. No real-model correctness, language quality, CUDA/INT8 result, external-engine comparison, or production-serving capability is claimed. Detailed status is tracked in `tinyserve_implementation_progress.md`.
+Wave 5 (fixture CPU runtime, correctness harness, contiguous KV cache, and reproducible fixture benchmark) is complete as the minimum strong version. Wave 6's optional CUDA gate is complete, with kernels deferred because no local CUDA toolchain/device could be validated. No real-model correctness, language quality, CUDA/INT8 result, external-engine comparison, or production-serving capability is claimed. Detailed status is tracked in `tinyserve_implementation_progress.md`.
+
+## Optional CUDA gate
+
+Wave 6 adds `-DTINYSERVE_ENABLE_CUDA=ON` as an opt-in probe. It skips cleanly and preserves the CPU build when a CUDA compiler or toolkit is unavailable. On this machine, `nvcc`, `nvidia-smi`, `CUDA_PATH`, and the standard toolkit directory were absent, so RMSNorm, RoPE, GEMV/cuBLAS, and runtime integration remain explicitly deferred rather than untested. See [CUDA notes](docs/cuda_notes.md) for commands, architecture flags, the availability target, and the exact implementation status.
 
 ## License
 
